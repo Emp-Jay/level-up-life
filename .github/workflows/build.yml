@@ -1,0 +1,152 @@
+name: Build Level Up Life
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+
+  # ─── Job 1: Build PWA + Deploy to GitHub Pages (iPhone) ───────────
+  deploy-pwa:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Node 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build PWA for GitHub Pages
+      run: npm run build
+      env:
+        # Sets the base URL to /repo-name/ for GitHub Pages
+        VITE_BASE: /${{ github.event.repository.name }}/
+
+    - name: Fix manifest.json for GitHub Pages
+      run: |
+        BASE="/${{ github.event.repository.name }}"
+        node -e "
+          const fs = require('fs');
+          const m = JSON.parse(fs.readFileSync('dist/manifest.json','utf8'));
+          m.start_url = '${BASE}/';
+          m.scope = '${BASE}/';
+          m.icons = m.icons.map(i => ({...i, src: '${BASE}' + i.src}));
+          fs.writeFileSync('dist/manifest.json', JSON.stringify(m, null, 2));
+          console.log('manifest.json updated for GitHub Pages');
+        "
+
+    - name: Setup GitHub Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: dist/
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+
+  # ─── Job 2: Build Android APK ─────────────────────────────────────
+  build-apk:
+    runs-on: ubuntu-latest
+    needs: deploy-pwa
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Node 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build web app for Android (base = ./)
+      run: npm run build
+
+    - name: Add Android platform
+      run: npx cap add android
+
+    - name: Sync Capacitor
+      run: npx cap sync android
+
+    - name: Set Android app icons
+      run: |
+        pip install Pillow
+        python3 - << 'PYEOF'
+        import os
+        from PIL import Image
+        src = "public/icon-512x512.png"
+        img = Image.open(src).convert("RGBA")
+        densities = {"mdpi":48,"hdpi":72,"xhdpi":96,"xxhdpi":144,"xxxhdpi":192}
+        for density, size in densities.items():
+          path = f"android/app/src/main/res/mipmap-{density}"
+          os.makedirs(path, exist_ok=True)
+          resized = img.resize((size, size), Image.LANCZOS)
+          resized.save(f"{path}/ic_launcher.png")
+          resized.save(f"{path}/ic_launcher_round.png")
+        PYEOF
+
+    - name: Write local.properties
+      run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+
+    - name: Make gradlew executable
+      run: chmod +x android/gradlew
+
+    - name: Build APK
+      run: |
+        cd android
+        ./gradlew assembleDebug --no-daemon
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: LevelUpLife-APK
+        path: android/app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 30
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      if: github.ref == 'refs/heads/main'
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: "Level Up Life v1.0.${{ github.run_number }}"
+        files: android/app/build/outputs/apk/debug/app-debug.apk
+        body: |
+          ## ⚡ Level Up Life — Self Growth. Gamified.
+
+          ### 📱 Android
+          Download **app-debug.apk** → install on Android phone
+
+          ### 🍎 iPhone (PWA)
+          Open **${{ steps.deployment.outputs.page_url || 'GitHub Pages URL' }}** in Safari
+          → Tap Share → Add to Home Screen → Done!
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
