@@ -1,0 +1,17 @@
+{
+  "appId": "com.jj.leveluplife",
+  "appName": "Level Up Life",
+  "webDir": "dist",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#00e5cc",
+      "sound": "beep.wav"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "backgroundColor": "#05050f"
+    }
+  }
+}

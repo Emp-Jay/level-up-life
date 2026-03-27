@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+    <!-- Theme -->
+    <meta name="theme-color" content="#05050f" />
+    <meta name="background-color" content="#05050f" />
+
+    <!-- PWA / Android -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Level Up Life" />
+    <meta name="msapplication-TileColor" content="#05050f" />
+    <meta name="msapplication-TileImage" content="icon-144x144.png" />
+    <meta name="msapplication-tap-highlight" content="no" />
+
+    <!-- PWA / iOS Safari -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Level Up Life" />
+
+    <!-- iOS icons (Safari uses these for Add to Home Screen) -->
+    <link rel="apple-touch-icon" href="icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="icon-128x128.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="icon-167x167.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icon-180x180.png" />
+
+    <!-- iOS splash screens -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="icon-192x192.png" />
+
+    <title>Level Up Life - Self Growth. Gamified.</title>
+
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 0;
+        background-color: #05050f;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overscroll-behavior: none;
+        -webkit-overflow-scrolling: touch;
+      }
+      #root { min-height: 100vh; min-height: 100dvh; }
+      html, body { overscroll-behavior-y: none; }
+
+      /* iOS PWA - hide Safari UI when running as standalone */
+      @media (display-mode: standalone) {
+        body { padding-top: env(safe-area-inset-top); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
